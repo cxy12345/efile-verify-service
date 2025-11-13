@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.verify.efileverifyservice.mapper.DataTransferMapper">
+
+    <select id="getDataMap" resultType="java.util.Map">
+        SELECT
+        <if test="columnList == null or columnList.size == 0">
+            *
+        </if>
+        <if test="columnList != null and columnList.size > 0">
+            <foreach collection="columnList" separator="," item="column">
+                ${column}
+            </foreach>
+        </if>
+        FROM
+        ${tableName}
+        <where>
+            <if test="param != null and param.size > 0">
+                <foreach collection="param.entrySet()" item="entry" index="key">
+                    <if test="key != 'startTime' and key != 'endTime' and key != 'inParam' and key != 'timeColumn' and key != 'dateParams' and key != 'likeParam'">
+                        AND ${key} = #{entry.value, typeHandler=com.nrec.dw.dam.dataTransfer.handler.CustomTypeHandler}
+                    </if>
+                </foreach>
+                <if test="param.likeParam != null and param.likeParam.size > 0">
+                    <foreach collection="param.likeParam.entrySet()" item="likeEntry" index="likeKey">
+                        <if test="likeKey != 'startTime' and likeKey != 'endTime' and likeKey != 'inParam' and likeKey != 'timeColumn' and likeKey != 'dateParams'">
+                            AND ${likeKey} like '%' || #{likeEntry.value, typeHandler=com.nrec.dw.dam.dataTransfer.handler.CustomTypeHandler} || '%'
+                        </if>
+                    </foreach>
+                </if>
+
+                <if test="param.inParam != null and param.inParam.size > 0">
+                    <foreach collection="param.inParam.entrySet()" item="inParamEntry" index="inParamFey">
+                        AND ${inParamFey} IN
+                        <foreach collection="inParamEntry" item="inParamItem" open="(" separator="," close=")">
+                            #{inParamItem, typeHandler=com.nrec.dw.dam.dataTransfer.handler.CustomTypeHandler}
+                        </foreach>
+                    </foreach>
+                </if>
+                <if test="param.dateParams != null and param.dateParams.size > 0">
+                    <foreach collection="param.dateParams" item="dateParam">
+                        AND ${dateParam.timeColumn} between TO_DATE(#{dateParam.startTime}, 'yyyy-MM-dd HH24:mi:ss') and
+                        TO_DATE(#{dateParam.endTime}, 'yyyy-MM-dd HH24:mi:ss')
+                    </foreach>
+                </if>
+
+            </if>
+        </where>
+    </select>
+
+</mapper>

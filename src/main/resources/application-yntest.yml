@@ -1,0 +1,32 @@
+﻿server:
+  port: 80901
+#数据源配置
+spring:
+  datasource:
+    dynamic:
+      # 设置默认的数据源或者数据源组
+      primary: sysdb
+      strict: false
+      datasource:
+        # 系统平台数据库配置
+        sysdb:
+          driver-class-name: oracle.jdbc.driver.OracleDriver
+          url: jdbc:oracle:thin:@//172.31.34.4:1521/neadsptest?useUnicode=true&characterEncoding=UTF-8
+          username: monitoropt
+          password: dljyzx#2025#2
+        datadb:
+          driver-class-name: oracle.jdbc.driver.OracleDriver
+          url: jdbc:oracle:thin:@//172.31.34.4:1521/neadsptest?useUnicode=true&characterEncoding=UTF-8
+          username: tradecdm
+          password: dljyzx#2025#3
+
+
+efile:
+  url: /users/ems/template/efile/
+  interface:
+    name: interfaceName
+  push-url: http://172.23.6.130:8081/ynszhjg-service/mkOperationMonitor/pushEfile
+  #  用于解析当前执行时间和计划执行时间的，此cron表达式要和推送的xxljob任务的表达式一致
+  cron: 0 0 5 * * ?
+  data-url: /users/ems/template/efileData/
+  no-data-url: /users/ems/template/noData/

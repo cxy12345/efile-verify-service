@@ -1,0 +1,29 @@
+﻿server:
+  port: 80901
+spring:
+  datasource:
+    dynamic:
+      primary: sysdb
+      strict: false
+      datasource:
+        sysdb:
+          driver-class-name: oracle.jdbc.driver.OracleDriver
+          url: jdbc:oracle:thin:@//172.28.1.5:1521/neadsp?useUnicode=true&characterEncoding=UTF-8
+          username: monitoropt
+          password: kmpex#2025#2
+        datadb:
+          driver-class-name: oracle.jdbc.driver.OracleDriver
+          url: jdbc:oracle:thin:@//172.28.1.5:1521/neadsp?useUnicode=true&characterEncoding=UTF-8
+          username: tradecdm
+          password: kmpex#2025#3
+
+
+efile:
+  url: /users/ems/template/efile/
+  interface:
+    name: interfaceName
+  push-url: http://172.23.6.130:8081/ynszhjg-service/mkOperationMonitor/pushEfile
+  cron: 0 0 5 * * ?
+  data-url: /users/ems/template/efileData/
+  no-data-url: /users/ems/template/noData/
+

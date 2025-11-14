@@ -67,33 +67,59 @@ public class ExcelDealController {
         return Base64.getEncoder().encodeToString(fos.toByteArray());
     }
 
-    @PostMapping(value = "/export/month")
-    public String exportMonth(@RequestBody JSONObject json, HttpServletResponse response) {
-        ByteArrayOutputStream fos = null;
+
+    @PostMapping(value = "/export/days")
+    public void exportDays(@RequestBody JSONObject json, HttpServletResponse response) {
         try {
-            TemplateExportParams params = new TemplateExportParams(monthTemplate);
+            TemplateExportParams params = new TemplateExportParams(dayTemplate);
+            params.setSheetNum(new Integer[]{0,1,2,3,4,5,6,7,8,9,10,11,12,13});
             params.setColForEach(true);
             Workbook book = ExcelExportUtil.exportExcel(params, processJsonObject(json));
-            // int listMaintenanceRecordMStartRow = 3;
-            // CellRangeAddress regionMaintenanceRecord = new CellRangeAddress(listMaintenanceRecordMStartRow,
-            // listMaintenanceRecordMStartRow + listMaintenanceRecordM.size() - 1, 0, 2);
-            // book.getSheetAt(0).addMergedRegion(regionMaintenanceRecord);
 
-            // PoiMergeCellUtil.mergeCells(book.getSheetAt(0), 1, 0,1);
-            fos = new ByteArrayOutputStream();
-            // 设置响应头
-            // response.setContentType(CONTENT_TYPE);
-            // response.setHeader("Content-Disposition", String.format("attachment;filename=\"%s.xlsx\"",
-            // URLEncoder.encode("负荷单位日账单", "UTF-8").replaceAll("\\+", "%20")));
-            // book.write(response.getOutputStream());
-            book.write(fos);
+            // 设置响应头，支持文件下载
+            response.setContentType(CONTENT_TYPE);
+            response.setHeader("Content-Disposition", "attachment;filename=\"day_report.xlsx\"");
+            response.setCharacterEncoding("UTF-8");
+
+            // 直接将Workbook写入响应输出流
+            book.write(response.getOutputStream());
             book.close();
-            fos.close();
+
+            // 确保数据被发送
+            response.getOutputStream().flush();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("导出Excel文件失败", e);
         }
-        return Base64.getEncoder().encodeToString(fos.toByteArray());
     }
+
+
+//    @PostMapping(value = "/export/month")
+//    public String exportMonth(@RequestBody JSONObject json, HttpServletResponse response) {
+//        ByteArrayOutputStream fos = null;
+//        try {
+//            TemplateExportParams params = new TemplateExportParams(monthTemplate);
+//            params.setColForEach(true);
+//            Workbook book = ExcelExportUtil.exportExcel(params, processJsonObject(json));
+//            // int listMaintenanceRecordMStartRow = 3;
+//            // CellRangeAddress regionMaintenanceRecord = new CellRangeAddress(listMaintenanceRecordMStartRow,
+//            // listMaintenanceRecordMStartRow + listMaintenanceRecordM.size() - 1, 0, 2);
+//            // book.getSheetAt(0).addMergedRegion(regionMaintenanceRecord);
+//
+//            // PoiMergeCellUtil.mergeCells(book.getSheetAt(0), 1, 0,1);
+//            fos = new ByteArrayOutputStream();
+//            // 设置响应头
+//            // response.setContentType(CONTENT_TYPE);
+//            // response.setHeader("Content-Disposition", String.format("attachment;filename=\"%s.xlsx\"",
+//            // URLEncoder.encode("负荷单位日账单", "UTF-8").replaceAll("\\+", "%20")));
+//            // book.write(response.getOutputStream());
+//            book.write(fos);
+//            book.close();
+//            fos.close();
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//        return Base64.getEncoder().encodeToString(fos.toByteArray());
+//    }
 
     private JSONObject processJsonObject(Map<String, Object> original) {
         JSONObject result = new JSONObject();

@@ -1,5 +1,5 @@
 ﻿server:
-  port: 80901
+  port: 8099
 #数据源配置
 spring:
   datasource:
@@ -29,3 +29,8 @@ efile:
   cron: 0 0 5 * * ?
   data-url: C:\Users\15878\Desktop\template\efileData\
   no-data-url: C:\Users\15878\Desktop\template\noData\
+
+excel:
+  template:
+    day: /users/ems/template/负荷单位日账单模板.xlsx
+    month: /users/ems/template/负荷单位月账单模板.xlsx

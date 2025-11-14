@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan({"com.nrec.dw.dam.*.mapper"})
+@MapperScan({"com.verify.efileverifyservice.mapper"})
 public class EfileVerifyServiceApplication {
 
     public static void main(String[] args) {

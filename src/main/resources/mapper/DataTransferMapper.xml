@@ -20,13 +20,13 @@
             <if test="param != null and param.size > 0">
                 <foreach collection="param.entrySet()" item="entry" index="key">
                     <if test="key != 'startTime' and key != 'endTime' and key != 'inParam' and key != 'timeColumn' and key != 'dateParams' and key != 'likeParam'">
-                        AND ${key} = #{entry.value, typeHandler=com.nrec.dw.dam.dataTransfer.handler.CustomTypeHandler}
+                        AND ${key} = #{entry.value, typeHandler=com.verify.efileverifyservice.handler.CustomTypeHandler}
                     </if>
                 </foreach>
                 <if test="param.likeParam != null and param.likeParam.size > 0">
                     <foreach collection="param.likeParam.entrySet()" item="likeEntry" index="likeKey">
                         <if test="likeKey != 'startTime' and likeKey != 'endTime' and likeKey != 'inParam' and likeKey != 'timeColumn' and likeKey != 'dateParams'">
-                            AND ${likeKey} like '%' || #{likeEntry.value, typeHandler=com.nrec.dw.dam.dataTransfer.handler.CustomTypeHandler} || '%'
+                            AND ${likeKey} like '%' || #{likeEntry.value, typeHandler=com.verify.efileverifyservice.handler.CustomTypeHandler} || '%'
                         </if>
                     </foreach>
                 </if>
@@ -35,7 +35,7 @@
                     <foreach collection="param.inParam.entrySet()" item="inParamEntry" index="inParamFey">
                         AND ${inParamFey} IN
                         <foreach collection="inParamEntry" item="inParamItem" open="(" separator="," close=")">
-                            #{inParamItem, typeHandler=com.nrec.dw.dam.dataTransfer.handler.CustomTypeHandler}
+                            #{inParamItem, typeHandler=com.verify.efileverifyservice.handler.CustomTypeHandler}
                         </foreach>
                     </foreach>
                 </if>

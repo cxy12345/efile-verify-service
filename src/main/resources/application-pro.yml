@@ -1,5 +1,5 @@
 ﻿server:
-  port: 80901
+  port: 8099
 spring:
   datasource:
     dynamic:

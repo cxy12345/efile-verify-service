@@ -12,9 +12,11 @@ import com.verify.efileverifyservice.enums.FrequencyTypeEnum;
 import com.verify.efileverifyservice.enums.StatsDimensionEnum;
 import com.verify.efileverifyservice.enums.base.BaseCorrespondEnum;
 import com.verify.efileverifyservice.enums.base.BaseEnum;
+import com.verify.efileverifyservice.enums.base.StaticsDimenEnum;
 import com.verify.efileverifyservice.enums.business.BusinessEnum;
 import com.verify.efileverifyservice.enums.metric.MetricCorrespondEnum;
 import com.verify.efileverifyservice.enums.metric.MetricEnum;
+import com.verify.efileverifyservice.mapper.DataMapper;
 import com.verify.efileverifyservice.mapper.DataTransferMapper;
 import com.verify.efileverifyservice.service.DataTransferService;
 import com.verify.efileverifyservice.util.EfileUtil;
@@ -59,23 +61,69 @@ public class DataTransferServiceImpl implements DataTransferService {
     private DataTransferMapper dataTransferMapper;
 
     @Resource
-    private DataTransferService dataTransferService;
+    private DataMapper dataMapper;
 
     @Resource
     private EfileUtil efileUtil;
-    @Autowired
-    private PathMatcher pathMatcher;
+
+
+    /**
+     * 根据日期字符串识别时间类型
+     * @param dateStr 日期字符串
+     * @return 时间类型枚举
+     */
+    private StaticsDimenEnum identifyDateType(String dateStr) {
+        if (StringUtils.isEmpty(dateStr)) {
+            return StaticsDimenEnum.DAY; // 默认按日处理
+        }
+
+        if (dateStr.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            // 日格式: 2025-11-11
+            return StaticsDimenEnum.DAY;
+        } else if (dateStr.matches("\\d{4}-\\d{2}")) {
+            // 月格式: 2025-11
+            return StaticsDimenEnum.MONTH;
+        } else if (dateStr.matches("\\d{4}-Q[1-4]")) {
+            // 季格式: 2024-Q1
+            return StaticsDimenEnum.QUARTER;
+        } else if (dateStr.matches("\\d{4}")) {
+            // 年格式: 2025
+            return StaticsDimenEnum.YEAR;
+        } else if (dateStr.matches("\\d{4}-W\\d{2}")) {
+            // 周格式: 2025-W04
+            return StaticsDimenEnum.WEEK;
+        }
+
+        return StaticsDimenEnum.DAY; // 默认按日处理
+    }
+
 
     @Override
     public void transferData(String supplementDate) {
         List<GatherResultInfo> gatherResultInfos = new ArrayList<>();
-        String date = StringUtils.isEmpty(supplementDate) ? DateUtil.format(DateUtil.offsetDay(DateUtil.date(), -1), DatePattern.NORM_DATE_FORMAT) : supplementDate;
-//        从配置表里获取需要处理的数据
-//        gatherResultInfos = gatherResultInfoMapper.selectList(new LambdaQueryWrapper<GatherResultInfo>()
-//                        .like(GatherResultInfo::getPlanGatherTime,
-//                                date
-//                        )
-//        );
+        StaticsDimenEnum staticsDimenEnum1 = identifyDateType(supplementDate);
+        for (MetricDefinition metricDefinition : dataMapper.queryMetricConfig(staticsDimenEnum1.getValue())) {
+            GatherResultInfo gatherResultInfo = new GatherResultInfo();
+            gatherResultInfo.setModelName(metricDefinition.getRelatedModel());
+            gatherResultInfo.setModelChineseName(metricDefinition.getMetricName());
+            gatherResultInfo.setStatsDimension(metricDefinition.getStatsDimension());
+            gatherResultInfo.setGatherType("0");
+            gatherResultInfo.setBusinessTime(supplementDate);
+            gatherResultInfos.add(gatherResultInfo);
+        }
+        dataMapper.queryBaseDataConfig(staticsDimenEnum1.getDisplay()).forEach(baseDataConfig -> {
+            GatherResultInfo gatherResultInfo = new GatherResultInfo();
+            gatherResultInfo.setModelName(baseDataConfig.getModelName());
+            gatherResultInfo.setModelChineseName(baseDataConfig.getBaseDataName());
+            StaticsDimenEnum staticsDimenEnum = StaticsDimenEnum.ofDisplay(baseDataConfig.getStatisticalCycle());
+            gatherResultInfo.setStatsDimension(Integer.valueOf(staticsDimenEnum.getValue()));
+            gatherResultInfo.setGatherType("1");
+            gatherResultInfo.setBusinessTime(supplementDate);
+            gatherResultInfos.add(gatherResultInfo);
+        });
+
+
+
         List<BaseEntity> baseEntityAll = new ArrayList<>();
         List<MetricEntity> metricEntityAll = new ArrayList<>();
         List<BusinessEntity> businessEntityAll = new ArrayList<>();
@@ -119,7 +167,6 @@ public class DataTransferServiceImpl implements DataTransferService {
                 }
             }
         });
-//        3. 生成E文件后，打成压缩包，上传文件服务器，并生成JobLog及JobLogDetail，JobLog中需要增加文件存储的字段
         generateEfile(baseEntityAll, metricEntityAll, baseList, metricList, businessEntityAll, businessList,supplementDate);
     }
 

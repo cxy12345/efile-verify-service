@@ -127,9 +127,10 @@ public class DataTransferServiceImpl implements DataTransferService {
         List<BaseEntity> baseEntityAll = new ArrayList<>();
         List<MetricEntity> metricEntityAll = new ArrayList<>();
         List<BusinessEntity> businessEntityAll = new ArrayList<>();
-        List<GatherResultInfo> baseList = new ArrayList<>();
-        List<GatherResultInfo> metricList = new ArrayList<>();
-        List<GatherResultInfo> businessList = new ArrayList<>();
+//        List<GatherResultInfo> baseList = new ArrayList<>();
+//        List<GatherResultInfo> metricList = new ArrayList<>();
+//        List<GatherResultInfo> businessList = new ArrayList<>();
+        Map<String, Object> metricVerifyMap = new HashMap<>();
 
         gatherResultInfos.parallelStream().forEach(gatherResultInfo -> {
             if ("1".equals(gatherResultInfo.getGatherType())) {
@@ -138,36 +139,40 @@ public class DataTransferServiceImpl implements DataTransferService {
                     synchronized (baseEntityAll) {
                         baseEntityAll.addAll(baseEntities);
                     }
-                    synchronized (baseList) {
-                        baseList.add(gatherResultInfo);
-                    }
+//                    synchronized (baseList) {
+//                        baseList.add(gatherResultInfo);
+//                    }
                 } catch (Exception e) {
                     logError("处理基础数据时发生错误", gatherResultInfo.getModelName(), e);
                 }
             } else if ("0".equals(gatherResultInfo.getGatherType())) {
                 try {
-                    List<MetricEntity> metricEntities = queryMetricData(gatherResultInfo);
+                    List<MetricEntity> metricEntities = queryMetricData(gatherResultInfo,metricVerifyMap);
                     synchronized (metricEntityAll) {
                         metricEntityAll.addAll(metricEntities);
                     }
-                    synchronized (metricList) {
-                        metricList.add(gatherResultInfo);
-                    }
+//                    synchronized (metricList) {
+//                        metricList.add(gatherResultInfo);
+//                    }
                     List<BusinessEntity> businessEntityList = queryBusinessData(gatherResultInfo);
                     synchronized (businessEntityAll) {
                         businessEntityAll.addAll(businessEntityList);
                     }
-                    synchronized (businessList) {
-                        businessList.addAll(businessEntityList.stream().map(businessEntity -> {
-                            return businessEntity.getGatherResultInfo();
-                        }).collect(Collectors.toList()));
-                    }
+//                    synchronized (businessList) {
+//                        businessList.addAll(businessEntityList.stream().map(businessEntity -> {
+//                            return businessEntity.getGatherResultInfo();
+//                        }).collect(Collectors.toList()));
+//                    }
                 } catch (Exception e) {
                     logError("处理指标数据时发生错误", gatherResultInfo.getModelName(), e);
                 }
             }
         });
-        generateEfile(baseEntityAll, metricEntityAll, baseList, metricList, businessEntityAll, businessList,supplementDate);
+        generateEfile(baseEntityAll, metricEntityAll,  businessEntityAll, supplementDate);
+//   生成文件(exportDataExcel)
+
+//        打成压缩包下载（exportZip）
+
     }
 
 
@@ -183,8 +188,7 @@ public class DataTransferServiceImpl implements DataTransferService {
      * 生成e文件并上传文件服务器
      */
     private void generateEfile(List<BaseEntity> baseEntityAll, List<MetricEntity> metricEntityAll,
-                                           List<GatherResultInfo> baseList, List<GatherResultInfo> metricList,
-                                           List<BusinessEntity> businessEntityAll, List<GatherResultInfo> businessList, String supplementDate) {
+                                           List<BusinessEntity> businessEntityAll, String supplementDate) {
         final String FILE_NAME_FORMAT = "NanW_%s_%s";
         String date = StringUtils.isEmpty(supplementDate) ? DateUtil.format(DateUtil.date(), DatePattern.PURE_DATE_FORMAT) : supplementDate.replace("-", "");
 
@@ -519,7 +523,7 @@ public class DataTransferServiceImpl implements DataTransferService {
     }
 
     // 查询指标数据
-    private List<MetricEntity> queryMetricData(GatherResultInfo gatherResultInfo) throws Exception {
+    private List<MetricEntity> queryMetricData(GatherResultInfo gatherResultInfo,Map<String,Object> verifyMap) throws Exception {
         Map<String, Object> paramMap = new HashMap<>();
         List<MetricEntity> metricEntityList = new ArrayList<>();
         paramMap.put("BUSINESS_TIME", gatherResultInfo.getBusinessTime());
@@ -536,11 +540,11 @@ public class DataTransferServiceImpl implements DataTransferService {
                 for (MetricCorrespondEnum metricCorrespondEnum : metricCorrespondEnums) {
 //                    判断是否是一个值多种类型，需要根据类型来判断的
                     paramMap.put("METRIC_VAL_NAME", metricCorrespondEnum.getDbsType1());
-                    List<MetricEntity> metric = metric(gatherResultInfo, paramMap, metricEnums);
+                    List<MetricEntity> metric = metric(gatherResultInfo, paramMap, metricEnums,verifyMap);
                     metricEntityList.addAll(metric);
                 }
             } else {
-                metricEntityList.addAll(metric(gatherResultInfo, paramMap, metricEnums));
+                metricEntityList.addAll(metric(gatherResultInfo, paramMap, metricEnums,verifyMap));
             }
         }
         return metricEntityList;
@@ -549,7 +553,9 @@ public class DataTransferServiceImpl implements DataTransferService {
     /**
      * 单独指标查询
      */
-    public List<MetricEntity> metric(GatherResultInfo gatherResultInfo, Map<String, Object> paramMap, List<MetricEnum> metricEnums) throws Exception {
+    public List<MetricEntity> metric(GatherResultInfo gatherResultInfo, Map<String, Object> paramMap,
+                                     List<MetricEnum> metricEnums,Map<String,Object> verifyMap) throws Exception {
+//        todo 这里
         List<Map<String, Object>> dataMap = dataTransferMapper.getDataMap(
                 gatherResultInfo.getModelName(), null, paramMap);
 

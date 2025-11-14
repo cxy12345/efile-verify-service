@@ -18,6 +18,8 @@ import java.math.BigDecimal;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * @author JinPeng
@@ -91,6 +93,53 @@ public class ExcelDealController {
             throw new RuntimeException("导出Excel文件失败", e);
         }
     }
+
+
+    @PostMapping(value = "/export/daysZip")
+    public void exportDaysAsZip(@RequestBody List<JSONObject> jsonList, HttpServletResponse response) {
+        try {
+            // 创建ZIP输出流
+            response.setContentType("application/zip");
+            response.setHeader("Content-Disposition", "attachment; filename=days_export.zip");
+
+            try (ByteArrayOutputStream zipOutput = new ByteArrayOutputStream();
+                 ZipOutputStream zipOutputStream = new ZipOutputStream(zipOutput)) {
+
+                // 循环处理每个JSON对象
+                for (int i = 0; i < Math.min(jsonList.size(), 4); i++) {
+                    JSONObject json = jsonList.get(i);
+
+                    // 生成Excel文件
+                    TemplateExportParams params = new TemplateExportParams(dayTemplate);
+                    params.setColForEach(true);
+                    Workbook workbook = ExcelExportUtil.exportExcel(params, processJsonObject(json));
+
+                    // 将workbook写入字节数组
+                    ByteArrayOutputStream excelOutput = new ByteArrayOutputStream();
+                    workbook.write(excelOutput);
+                    workbook.close();
+
+                    // 添加文件到ZIP
+                    ZipEntry zipEntry = new ZipEntry("day_report_" + (i + 1) + ".xlsx");
+                    zipOutputStream.putNextEntry(zipEntry);
+                    zipOutputStream.write(excelOutput.toByteArray());
+                    zipOutputStream.closeEntry();
+                    excelOutput.close();
+                }
+
+                zipOutputStream.finish();
+
+                // 写入响应
+                response.getOutputStream().write(zipOutput.toByteArray());
+                response.getOutputStream().flush();
+            }
+        } catch (Exception e) {
+            log.error("导出ZIP文件失败", e);
+            throw new RuntimeException("导出ZIP文件失败", e);
+        }
+    }
+
+
 
 
 //    @PostMapping(value = "/export/month")
